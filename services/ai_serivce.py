@@ -1,22 +1,28 @@
-# services/ai_service.py
 from transformers import pipeline
+import torch
 
 class AIService:
     def __init__(self):
-        # 가장 가벼운 텍스트 분류 모델 하나를 로드해봅니다.
-        # 나중에 실제 물류 특화 모델로 갈아끼울 자리입니다.
-        self.classifier = pipeline("sentiment-analysis", model="distilbert-base-uncased")
+        # 1. 감성 분석(Sentiment Analysis) 모델 로드 (가장 가볍고 범용적임)
+        # 실제로는 '사고/정체 분류 모델'로 갈아끼우는 지점입니다.
+        print("🤖 AI 모델 로딩 중... 잠시만 기다려주세요.")
+        self.classifier = pipeline(
+            "sentiment-analysis", 
+            model="distilbert-base-uncased-finetuned-sst-2-english",
+            device=-1 # CPU 사용 (GPU가 있다면 0으로 설정 가능)
+        )
+        print("✅ AI 모델 로드 완료!")
 
-    async def predict_accident(self, vehicle_history: list):
-        """차량의 과거 경로 데이터를 보고 사고 확률을 예측하는 척 합니다."""
-        # 실제로는 여기서 모델 추론이 일어납니다.
-        # 지금은 간단하게 텍스트 분석으로 테스트!
-        sample_text = "The vehicle speed dropped suddenly and engine heat is rising."
-        result = self.classifier(sample_text)
+    async def analyze_status(self, text: str):
+        """차량 리포트 텍스트를 분석하여 위험도 산출"""
+        # 모델 추론 (Inference)
+        result = self.classifier(text)[0]
         
-        return {
-            "probability": 0.85 if result[0]['label'] == 'NEGATIVE' else 0.1,
-            "reason": "급격한 속도 저하 및 엔진 과열 감지"
-        }
+        # NEGATIVE(부정적)일 경우 위험으로 간주 (Score는 확률값)
+        is_danger = result['label'] == 'NEGATIVE'
+        confidence = result['score']
+        
+        return is_danger, confidence
 
+# 싱글톤 객체 생성
 ai_service = AIService()

@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-py"
+  interface = "asyncio"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. 차량 마스터 (현재 상태 관리)
+model Vehicle {
+  id           String @id @default(uuid())
+  vehicle_no   String @unique
+  status       String @default("IDLE") // IDLE, RUNNING, DELAYED
+  driver_name  String
+  target_lat   Float?        // 목적지 위도
+  target_lng   Float?        // 목적지 경도
+  scheduled_at DateTime?     // 도착 예정 시간
+  logs         LocationLog[]
+  analysis     AnalysisLog[]
+  profile      DriverProfile?
+}
+
+// 2. 위치 로그 (실시간 좌표 적재)
+model LocationLog {
+  id         BigInt   @id @default(autoincrement())
+  vehicle_id String
+  latitude   Float
+  longitude  Float
+  speed      Float
+  created_at DateTime @default(now())
+  vehicle    Vehicle  @relation(fields: [vehicle_id], references: [id])
+}
+
+// 3. AI 추론 로그 (추론의 근거 저장)
+model AnalysisLog {
+  id           Int      @id @default(autoincrement())
+  vehicle_id   String
+  is_delayed   Boolean
+  confidence   Float    // AI의 확신도
+  reasoning    String   @db.Text // AI가 판단한 추론 근거
+  created_at   DateTime @default(now())
+  vehicle      Vehicle  @relation(fields: [vehicle_id], references: [id])
+}
+
+// 4. 운전자 성향 데이터 (추론의 참고 자료)
+model DriverProfile {
+  id               Int     @id @default(autoincrement())
+  vehicle_id       String  @unique
+  safe_drive_score Int     @default(100)
+  weather_tendency String? // 예: "폭설 시 평균 속도 40% 저하"
+  vehicle          Vehicle @relation(fields: [vehicle_id], references: [id])
+}
