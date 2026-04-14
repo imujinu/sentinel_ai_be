@@ -1,7 +1,7 @@
 import asyncio
 import random
-from connection_manager import manager
-from services.fleet_service import fleet_service
+from app.connection_manager import manager
+from app.services.fleet_service import fleet_service
 
 class SimulatorService:
     def __init__(self):

@@ -2,21 +2,31 @@ import math
 from datetime import datetime
 
 class FleetService:
-    def __init__(self):
+    def __init__(self, db_client):
         # 1. 감시 구역 설정
+        self.db = db_client
         self.WATCH_ZONES = [
             {"name": "강남역 공사구간", "lat": 37.4979, "lng": 127.0276, "radius": 0.005},
             {"name": "서초 나들목 정체구간", "lat": 37.4833, "lng": 127.0192, "radius": 0.008}
         ]
 
-    async def analyze_vehicle(self, data: dict):
+    async def process_vehicle_data(self, data: dict):
         # 2. 실시간 분석 시작
         lat, lng = data["lat"], data["lng"]
         plate = data["plateNumber"]
         speed = data["speed"]
         
+        # 데이터 저장 부분
         event = None
-        
+        await self.db.locationlog.create(
+            data={
+                "vehicle_id": vehicle_id,
+                "latitude": data.lat,
+                "longitude": data.lng,
+                "speed": data.speed
+            }
+        )
+
         # 지오펜싱 체크
         for zone in self.WATCH_ZONES:
             dist = math.sqrt((lat - zone["lat"])**2 + (lng - zone["lng"])**2)
@@ -39,5 +49,7 @@ class FleetService:
             print(f"[{datetime.now().strftime('%H:%M:%S')}] {event['message']}")
 
         return {"data": data, "event": event}
+    
+    
 
 fleet_service = FleetService()
