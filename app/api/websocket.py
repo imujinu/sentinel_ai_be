@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from models.vehicle import VehicleData
+from app.database.models.vehicle import VehicleData
 
 router = APIRouter()
 
